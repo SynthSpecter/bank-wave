@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>BudgetTrack - Manual Budget Management</title>
+   <link rel="stylesheet" href="styles/main.css">
+   <!-- Font Awesome pour les icônes (optionnel, sinon on utilise des emojis) -->
+   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+   <!-- Chart.js pour les graphiques -->
+   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+   <!-- En-tête -->
+   <header>
+      <h1 id="app-title">BudgetTrack</h1>
+      <div class="header-controls">
+         <div class="language-toggle">
+            <button id="fr-button" class="lang-button active" aria-label="Français">🇫🇷</button>
+            <button id="en-button" class="lang-button" aria-label="English">🇬🇧</button>
+         </div>
+         <div class="theme-toggle">
+            <button id="theme-button" aria-label="Changer de thème">🌓</button>
+         </div>
+      </div>
+   </header>
+
+   <!-- Navigation -->
+   <nav>
+      <ul>
+         <li><button class="nav-button active" data-section="dashboard" id="nav-dashboard">Tableau de bord</button></li>
+         <li><button class="nav-button" data-section="operations" id="nav-operations">Opérations</button></li>
+         <li><button class="nav-button" data-section="budgets" id="nav-budgets">Budgets</button></li>
+         <li><button class="nav-button" data-section="suggestions" id="nav-suggestions">Suggestions</button></li>
+      </ul>
+   </nav>
+
+   <!-- Contenu principal -->
+   <main>
+      <!-- Section Tableau de bord -->
+      <section id="dashboard" class="section active">
+         <h2 id="dashboard-title">Tableau de bord</h2>
+         <div class="dashboard-grid">
+            <div class="card">
+               <h3 id="current-balance-title">Solde actuel</h3>
+               <p id="current-balance">0,00 €</p>
+            </div>
+            <div class="card">
+               <h3 id="monthly-expenses-title">Dépenses ce mois</h3>
+               <p id="monthly-expenses">0,00 €</p>
+            </div>
+            <div class="card">
+               <h3 id="monthly-income-title">Revenus ce mois</h3>
+               <p id="monthly-income">0,00 €</p>
+            </div>
+         </div>
+         <div class="chart-container">
+            <canvas id="budget-chart"></canvas>
+         </div>
+      </section>
+
+      <!-- Section Opérations -->
+      <section id="operations" class="section">
+         <h2 id="operations-title">Ajouter une opération</h2>
+         <form id="operation-form">
+            <div class="form-group">
+               <label for="operation-date" id="operation-date-label">Date</label>
+               <input type="date" id="operation-date" required>
+            </div>
+            <div class="form-group">
+               <label for="operation-amount" id="operation-amount-label">Montant (€)</label>
+               <input type="number" id="operation-amount" step="0.01" required>
+            </div>
+            <div class="form-group">
+               <label for="operation-type" id="operation-type-label">Type</label>
+               <select id="operation-type" required>
+                  <option value="expense" id="expense-option">Dépense</option>
+                  <option value="income" id="income-option">Revenu</option>
+               </select>
+            </div>
+            <div class="form-group">
+               <label for="operation-category" id="operation-category-label">Catégorie</label>
+               <select id="operation-category" required></select>
+            </div>
+            <div class="form-group">
+               <label for="operation-description" id="operation-description-label">Description</label>
+               <input type="text" id="operation-description">
+            </div>
+            <button type="submit" class="submit-button" id="submit-button">Ajouter</button>
+         </form>
+
+         <h3 id="operations-history-title">Historique des opérations</h3>
+         <table id="operations-table">
+            <thead>
+               <tr>
+                  <th id="table-date">Date</th>
+                  <th id="table-description">Description</th>
+                  <th id="table-category">Catégorie</th>
+                  <th id="table-amount">Montant</th>
+                  <th id="table-type">Type</th>
+                  <th id="table-actions">Actions</th>
+               </tr>
+            </thead>
+            <tbody id="operations-list"></tbody>
+         </table>
+      </section>
+
+      <!-- Section Budgets -->
+      <section id="budgets" class="section">
+         <h2 id="budgets-title">Gestion des budgets</h2>
+         <form id="budget-form">
+            <div class="form-group">
+               <label for="budget-category" id="budget-category-label">Catégorie</label>
+               <input type="text" id="budget-category" required>
+            </div>
+            <div class="form-group">
+               <label for="budget-amount" id="budget-amount-label">Budget mensuel (€)</label>
+               <input type="number" id="budget-amount" step="0.01" required>
+            </div>
+            <button type="submit" class="submit-button" id="budget-submit-button">Ajouter</button>
+         </form>
+
+         <h3 id="budgets-list-title">Liste des budgets</h3>
+         <table id="budgets-table">
+            <thead>
+               <tr>
+                  <th id="table-budget-category">Catégorie</th>
+                  <th id="table-budget-amount">Budget mensuel</th>
+                  <th id="table-budget-spent">Dépensé</th>
+                  <th id="table-budget-remaining">Restant</th>
+                  <th id="table-budget-actions">Actions</th>
+               </tr>
+            </thead>
+            <tbody id="budgets-list"></tbody>
+         </table>
+      </section>
+
+      <!-- Section Suggestions -->
+      <section id="suggestions" class="section">
+         <h2 id="suggestions-title">Suggestions</h2>
+         <div id="suggestions-container"></div>
+      </section>
+   </main>
+
+   <!-- Pied de page -->
+   <footer>
+      <p id="footer-text">BudgetTrack - Gestion manuelle et locale de ton budget | <button id="export-button">Exporter
+            en CSV</button></p>
+   </footer>
+
+   <!-- Scripts -->
+   <script src="scripts/translations.js"></script>
+   <script src="scripts/budget.js"></script>
+   <script src="scripts/operations.js"></script>
+   <script src="scripts/suggestions.js"></script>
+   <script src="scripts/app.js"></script>
+</body>
+
+</html>

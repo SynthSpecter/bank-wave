@@ -1,0 +1,11 @@
+{
+  "name": "bank-wave",
+  "version": "1.0.0",
+  "description": "Une application bancaire manuelle et locale pour gérer son budget avec des graphiques, des catégories personnalisables et des suggestions intelligentes.",
+  "main": "index.html",
+  "scripts": {
+    "start": "echo \"Ouvrez index.html dans votre navigateur\""
+  },
+  "author": "Kévin Thouroude-Leroux",
+  "license": "MIT"
+}
