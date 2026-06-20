@@ -1,96 +1,77 @@
-// ===== AJOUT D'UNE OPÉRATION =====
+// ===== OPÉRATIONS =====
 function addOperation() {
-  const date = document.getElementById('operation-date').value
-  const amount = parseFloat(document.getElementById('operation-amount').value)
+  const date = getRequiredValue('operation-date')
+  const amount = parsePositiveAmount('operation-amount')
   const type = document.getElementById('operation-type').value
   const category = document.getElementById('operation-category').value
-  const description =
-    document.getElementById('operation-description').value || ''
+  const description = getRequiredValue('operation-description')
 
-  if (!date || isNaN(amount) || !category) {
-    alert(
-      currentLanguage === 'fr'
-        ? 'Veuillez remplir tous les champs obligatoires.'
-        : 'Please fill in all required fields.',
-    )
+  if (!date || !category) {
+    showValidationMessage(t('invalidRequired'))
     return
   }
 
-  const newOperation = {
-    id: Date.now(),
+  if (amount === null) {
+    showValidationMessage(t('invalidPositiveAmount'))
+    return
+  }
+
+  operations.push({
+    id: createId(),
     date,
     amount,
     type,
     category,
     description,
-  }
-
-  operations.push(newOperation)
-  saveOperations()
-
-  document.getElementById('operation-form').reset()
-  renderOperations()
-  updateDashboard()
-  updateChartData()
-  renderSuggestions()
-}
-
-// ===== SUPPRESSION D'UNE OPÉRATION =====
-function deleteOperation(id) {
-  operations = operations.filter((op) => op.id !== id)
-  saveOperations()
-  renderOperations()
-  updateDashboard()
-  updateChartData()
-  renderSuggestions()
-}
-
-// ===== SAUVEGARDE DES OPÉRATIONS =====
-function saveOperations() {
-  localStorage.setItem('operations', JSON.stringify(operations))
-}
-
-// ===== RENDU DES OPÉRATIONS =====
-function renderOperations() {
-  const operationsList = document.getElementById('operations-list')
-  operationsList.innerHTML = ''
-
-  const now = new Date()
-  const currentYear = now.getFullYear()
-
-  const filteredOperations = operations.filter((op) => {
-    const opDate = new Date(op.date)
-    return opDate.getFullYear() === currentYear
   })
 
+  saveOperations()
+  document.getElementById('operation-form').reset()
+  setDefaultOperationDate()
+  refreshApp()
+}
+
+function deleteOperation(id) {
+  operations = operations.filter((operation) => operation.id !== id)
+  saveOperations()
+  refreshApp()
+}
+
+function renderOperations() {
+  const operationsList = document.getElementById('operations-list')
+  const currentYear = new Date().getFullYear()
+  const filteredOperations = operations
+    .filter((operation) => new Date(operation.date).getFullYear() === currentYear)
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+
+  operationsList.replaceChildren()
+
   if (filteredOperations.length === 0) {
-    operationsList.innerHTML = `<tr><td colspan="6">${currentLanguage === 'fr' ? 'Aucune opération enregistrée.' : 'No operations recorded.'}</td></tr>`
+    operationsList.appendChild(createEmptyRow(6, t('noOperations')))
     return
   }
 
-  filteredOperations.forEach((op) => {
-    const row = document.createElement('tr')
-    const categoryName =
-      translations[currentLanguage].categories[op.category] || op.category
-    const typeName =
-      op.type === 'income'
-        ? translations[currentLanguage].income
-        : translations[currentLanguage].expense
-
-    row.innerHTML = `
-            <td>${formatDate(op.date)}</td>
-            <td>${op.description || '-'}</td>
-            <td><span class="category-icon">${categoryName}</span></td>
-            <td>${op.amount.toFixed(2)} €</td>
-            <td>${typeName}</td>
-            <td><button onclick="deleteOperation(${op.id})" class="delete-button">❌</button></td>
-        `
-    operationsList.appendChild(row)
+  filteredOperations.forEach((operation) => {
+    operationsList.appendChild(createOperationRow(operation))
   })
 }
 
-// ===== FORMATAGE DE DATE =====
-function formatDate(dateString) {
-  const date = new Date(dateString)
-  return date.toLocaleDateString(currentLanguage === 'fr' ? 'fr-FR' : 'en-US')
+function createOperationRow(operation) {
+  const row = document.createElement('tr')
+  const actionsCell = document.createElement('td')
+  const amountCell = createTableCell(formatCurrency(operation.amount), 'amount-cell')
+
+  amountCell.classList.add(operation.type === 'income' ? 'amount-income' : 'amount-expense')
+  actionsCell.appendChild(
+    createDeleteButton(t('deleteOperation'), () => deleteOperation(operation.id)),
+  )
+
+  row.appendChild(createTableCell(formatDate(operation.date)))
+  row.appendChild(createTableCell(operation.description || '-'))
+  row.appendChild(createTableCell(formatCategory(operation.category)))
+  row.appendChild(amountCell)
+  row.appendChild(createTableCell(operation.type === 'income' ? t('income') : t('expense')))
+  row.appendChild(actionsCell)
+
+  return row
 }

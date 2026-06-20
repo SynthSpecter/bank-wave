@@ -1,146 +1,161 @@
-// ===== RENDU DES SUGGESTIONS =====
+// ===== SUGGESTIONS =====
 function renderSuggestions() {
   const suggestionsContainer = document.getElementById('suggestions-container')
-  suggestionsContainer.innerHTML = ''
-
   const suggestions = generateSuggestions()
 
+  suggestionsContainer.replaceChildren()
+
   if (suggestions.length === 0) {
-    suggestionsContainer.innerHTML = `<p>${currentLanguage === 'fr' ? 'Aucune suggestion pour le moment.' : 'No suggestions at the moment.'}</p>`
+    const emptyMessage = document.createElement('p')
+
+    emptyMessage.className = 'empty-state'
+    emptyMessage.textContent = t('noSuggestions')
+    suggestionsContainer.appendChild(emptyMessage)
     return
   }
 
   suggestions.forEach((suggestion) => {
-    const suggestionElement = document.createElement('div')
-    suggestionElement.className = 'suggestion-card'
-    suggestionElement.innerHTML = `
-            <h3>${suggestion.title}</h3>
-            <p>${suggestion.message}</p>
-        `
-    suggestionsContainer.appendChild(suggestionElement)
+    suggestionsContainer.appendChild(createSuggestionCard(suggestion))
   })
 }
 
-// ===== GÉNÉRATION DES SUGGESTIONS =====
+function createSuggestionCard(suggestion) {
+  const suggestionElement = document.createElement('article')
+  const title = document.createElement('h3')
+  const message = document.createElement('p')
+
+  suggestionElement.className = 'suggestion-card'
+  title.textContent = `${suggestion.icon} ${suggestion.title}`
+  message.textContent = suggestion.message
+
+  suggestionElement.appendChild(title)
+  suggestionElement.appendChild(message)
+
+  return suggestionElement
+}
+
 function generateSuggestions() {
-  const suggestions = []
-  const now = new Date()
-  const currentMonth = now.getMonth()
-  const currentYear = now.getFullYear()
-
-  // 1. Vérifier les budgets dépassés
-  budgets.forEach((budget) => {
-    const spent = calculateSpentForCategory(budget.category)
-    if (spent > budget.amount) {
-      const categoryName =
-        translations[currentLanguage].categories[budget.category] ||
-        budget.category
-      suggestions.push({
-        title:
-          '⚠️ ' +
-          (currentLanguage === 'fr' ? 'Budget dépassé' : 'Budget Exceeded'),
-        message: `${translations[currentLanguage].budgetExceeded}"${categoryName}"${translations[currentLanguage].byAmount}${(spent - budget.amount).toFixed(2)} €.`,
-      })
-    }
-  })
-
-  // 2. Comparaison avec le mois dernier
-  const lastMonthExpenses = calculateLastMonthExpenses()
-  const currentMonthExpenses = calculateMonthlyExpenses()
-  if (lastMonthExpenses > 0) {
-    const difference = currentMonthExpenses - lastMonthExpenses
-    const percentage = (difference / lastMonthExpenses) * 100
-
-    if (percentage > 20) {
-      suggestions.push({
-        title:
-          '📈 ' +
-          (currentLanguage === 'fr' ? 'Dépenses en hausse' : 'Expenses Up'),
-        message: translations[currentLanguage].moreThanLastMonth.replace(
-          '%',
-          percentage.toFixed(1),
-        ),
-      })
-    } else if (percentage < -20) {
-      suggestions.push({
-        title:
-          '📉 ' +
-          (currentLanguage === 'fr' ? 'Dépenses en baisse' : 'Expenses Down'),
-        message: translations[currentLanguage].lessThanLastMonth.replace(
-          '%',
-          Math.abs(percentage).toFixed(1),
-        ),
-      })
-    }
-  }
-
-  // 3. Catégories les plus dépensières
-  const categoryExpenses = {}
-  operations
-    .filter((op) => {
-      const opDate = new Date(op.date)
-      return (
-        opDate.getMonth() === currentMonth &&
-        opDate.getFullYear() === currentYear &&
-        op.type === 'expense'
-      )
-    })
-    .forEach((op) => {
-      categoryExpenses[op.category] =
-        (categoryExpenses[op.category] || 0) + op.amount
-    })
-
-  const sortedCategories = Object.entries(categoryExpenses).sort(
-    (a, b) => b[1] - a[1],
-  )
-
-  if (sortedCategories.length > 0) {
-    const topCategory = sortedCategories[0]
-    const categoryName =
-      translations[currentLanguage].categories[topCategory[0]] || topCategory[0]
-    suggestions.push({
-      title:
-        '💰 ' +
-        (currentLanguage === 'fr'
-          ? 'Catégorie la plus dépensière'
-          : 'Top Spending Category'),
-      message: `${translations[currentLanguage].topCategory}"${categoryName}" : ${topCategory[1].toFixed(2)} €.`,
-    })
-  }
-
-  // 4. Suggestions d'épargne
-  const currentBalance = calculateCurrentBalance()
-  if (currentBalance > 0) {
-    suggestions.push({
-      title:
-        '💸 ' +
-        (currentLanguage === 'fr' ? 'Épargne possible' : 'Savings Opportunity'),
-      message: translations[currentLanguage].savingsSuggestion.replace(
-        '%',
-        currentBalance.toFixed(2),
-      ),
-    })
-  }
+  const suggestions = [
+    ...getBudgetOverrunSuggestions(),
+    ...getMonthlyComparisonSuggestions(),
+    ...getTopCategorySuggestions(),
+    ...getSavingsSuggestions(),
+  ]
 
   return suggestions
 }
 
-// ===== CALCUL DES DÉPENSES DU MOIS DERNIER =====
-function calculateLastMonthExpenses() {
-  const now = new Date()
-  const lastMonth = now.getMonth() - 1
-  const currentYear = now.getFullYear()
-  const lastMonthYear = lastMonth < 0 ? currentYear - 1 : currentYear
-  const adjustedLastMonth = lastMonth < 0 ? 11 : lastMonth
+function getBudgetOverrunSuggestions() {
+  return budgets
+    .map((budget) => {
+      const spent = calculateSpentForCategory(budget.category)
+      const overrun = spent - budget.amount
+
+      if (overrun <= 0) return null
+
+      return {
+        icon: '⚠️',
+        title: t('budgetExceededTitle'),
+        message: `${t('budgetExceeded')} "${getCategoryLabel(budget.category)}" ${t('byAmount')} ${formatCurrency(overrun)}.`,
+      }
+    })
+    .filter(Boolean)
+}
+
+function getMonthlyComparisonSuggestions() {
+  const lastMonthExpenses = calculateLastMonthExpenses()
+  const currentMonthExpenses = calculateMonthlyExpenses()
+
+  if (lastMonthExpenses <= 0) return []
+
+  const difference = currentMonthExpenses - lastMonthExpenses
+  const percentage = (difference / lastMonthExpenses) * 100
+
+  if (percentage > 20) {
+    return [
+      {
+        icon: '📈',
+        title: t('expensesUpTitle'),
+        message: t('moreThanLastMonth').replace('%', `${percentage.toFixed(1)} %`),
+      },
+    ]
+  }
+
+  if (percentage < -20) {
+    return [
+      {
+        icon: '📉',
+        title: t('expensesDownTitle'),
+        message: t('lessThanLastMonth').replace('%', `${Math.abs(percentage).toFixed(1)} %`),
+      },
+    ]
+  }
+
+  return []
+}
+
+function getTopCategorySuggestions() {
+  const categoryExpenses = getCurrentMonthCategoryExpenses()
+  const topCategory = Object.entries(categoryExpenses).sort((a, b) => b[1] - a[1])[0]
+
+  if (!topCategory) return []
+
+  return [
+    {
+      icon: '💰',
+      title: t('topCategoryTitle'),
+      message: `${t('topCategory')} "${getCategoryLabel(topCategory[0])}" : ${formatCurrency(topCategory[1])}.`,
+    },
+  ]
+}
+
+function getSavingsSuggestions() {
+  const currentBalance = calculateCurrentBalance()
+
+  if (currentBalance <= 0) return []
+
+  return [
+    {
+      icon: '💸',
+      title: t('savingsTitle'),
+      message: t('savingsSuggestion').replace('%', formatCurrency(currentBalance)),
+    },
+  ]
+}
+
+function getCurrentMonthCategoryExpenses() {
+  const { month, year } = getCurrentMonthContext()
 
   return operations
-    .filter((op) => {
-      const opDate = new Date(op.date)
+    .filter((operation) => {
+      const operationDate = new Date(operation.date)
       return (
-        opDate.getMonth() === adjustedLastMonth &&
-        opDate.getFullYear() === lastMonthYear &&
-        op.type === 'expense'
+        operation.type === 'expense' &&
+        operationDate.getMonth() === month &&
+        operationDate.getFullYear() === year
       )
     })
-    .reduce((total, op) => total + op.amount, 0)
+    .reduce((categoryExpenses, operation) => {
+      categoryExpenses[operation.category] =
+        (categoryExpenses[operation.category] || 0) + operation.amount
+      return categoryExpenses
+    }, {})
+}
+
+function calculateLastMonthExpenses() {
+  const now = new Date()
+  const currentMonth = now.getMonth()
+  const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1
+  const lastMonthYear = currentMonth === 0 ? now.getFullYear() - 1 : now.getFullYear()
+
+  return operations
+    .filter((operation) => {
+      const operationDate = new Date(operation.date)
+      return (
+        operation.type === 'expense' &&
+        operationDate.getMonth() === lastMonth &&
+        operationDate.getFullYear() === lastMonthYear
+      )
+    })
+    .reduce((total, operation) => total + operation.amount, 0)
 }

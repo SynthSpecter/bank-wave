@@ -1,97 +1,91 @@
-// ===== AJOUT D'UN BUDGET =====
+// ===== BUDGETS =====
 function addBudget() {
-  const category = document.getElementById('budget-category').value.trim()
-  const amount = parseFloat(document.getElementById('budget-amount').value)
+  const rawCategory = getRequiredValue('budget-category')
+  const amount = parsePositiveAmount('budget-amount')
 
-  if (!category || isNaN(amount)) {
-    alert(
-      currentLanguage === 'fr'
-        ? 'Veuillez remplir tous les champs obligatoires.'
-        : 'Please fill in all required fields.',
-    )
+  if (!rawCategory) {
+    showValidationMessage(t('invalidRequired'))
     return
   }
 
-  const existingBudgetIndex = budgets.findIndex((b) => b.category === category)
-  if (existingBudgetIndex !== -1) {
-    budgets[existingBudgetIndex].amount = amount
+  if (amount === null) {
+    showValidationMessage(t('invalidPositiveAmount'))
+    return
+  }
+
+  const category = registerCategory(rawCategory)
+  const existingBudget = budgets.find(
+    (budget) => budget.category.toLowerCase() === category.toLowerCase(),
+  )
+
+  if (existingBudget) {
+    existingBudget.amount = amount
   } else {
     budgets.push({ category, amount })
   }
 
-  if (!categories.includes(category)) {
-    categories.push(category)
-    localStorage.setItem('categories', JSON.stringify(categories))
-    updateCategorySelect()
-  }
-
   saveBudgets()
   document.getElementById('budget-form').reset()
-  renderBudgets()
-  updateChartData()
-  renderSuggestions()
+  refreshApp()
 }
 
-// ===== SUPPRESSION D'UN BUDGET =====
 function deleteBudget(category) {
-  budgets = budgets.filter((b) => b.category !== category)
+  budgets = budgets.filter((budget) => budget.category !== category)
   saveBudgets()
-  renderBudgets()
-  updateChartData()
-  renderSuggestions()
+  refreshApp()
 }
 
-// ===== SAUVEGARDE DES BUDGETS =====
-function saveBudgets() {
-  localStorage.setItem('budgets', JSON.stringify(budgets))
-}
-
-// ===== RENDU DES BUDGETS =====
 function renderBudgets() {
   const budgetsList = document.getElementById('budgets-list')
-  budgetsList.innerHTML = ''
+
+  budgetsList.replaceChildren()
 
   if (budgets.length === 0) {
-    budgetsList.innerHTML = `<tr><td colspan="5">${currentLanguage === 'fr' ? 'Aucun budget défini.' : 'No budgets defined.'}</td></tr>`
+    budgetsList.appendChild(createEmptyRow(5, t('noBudgets')))
     return
   }
 
-  budgets.forEach((budget) => {
-    const spent = calculateSpentForCategory(budget.category)
-    const remaining = budget.amount - spent
-    const categoryName =
-      translations[currentLanguage].categories[budget.category] ||
-      budget.category
-
-    const row = document.createElement('tr')
-    row.innerHTML = `
-            <td><span class="category-icon">${categoryName}</span></td>
-            <td>${budget.amount.toFixed(2)} €</td>
-            <td>${spent.toFixed(2)} €</td>
-            <td style="color: ${remaining >= 0 ? 'green' : 'red'}">${remaining.toFixed(2)} €</td>
-            <td>
-                <button onclick="deleteBudget('${budget.category}')" class="delete-button">❌</button>
-            </td>
-        `
-    budgetsList.appendChild(row)
-  })
+  budgets
+    .slice()
+    .sort((a, b) => a.category.localeCompare(b.category))
+    .forEach((budget) => {
+      budgetsList.appendChild(createBudgetRow(budget))
+    })
 }
 
-// ===== CALCUL DES DÉPENSES PAR CATÉGORIE =====
+function createBudgetRow(budget) {
+  const row = document.createElement('tr')
+  const spent = calculateSpentForCategory(budget.category)
+  const remaining = budget.amount - spent
+  const remainingCell = createTableCell(formatCurrency(remaining), 'remaining-cell')
+  const actionsCell = document.createElement('td')
+
+  remainingCell.classList.add(remaining >= 0 ? 'remaining-positive' : 'remaining-negative')
+  actionsCell.appendChild(
+    createDeleteButton(t('deleteBudget'), () => deleteBudget(budget.category)),
+  )
+
+  row.appendChild(createTableCell(formatCategory(budget.category)))
+  row.appendChild(createTableCell(formatCurrency(budget.amount)))
+  row.appendChild(createTableCell(formatCurrency(spent)))
+  row.appendChild(remainingCell)
+  row.appendChild(actionsCell)
+
+  return row
+}
+
 function calculateSpentForCategory(category) {
-  const now = new Date()
-  const currentMonth = now.getMonth()
-  const currentYear = now.getFullYear()
+  const { month, year } = getCurrentMonthContext()
 
   return operations
-    .filter((op) => {
-      const opDate = new Date(op.date)
+    .filter((operation) => {
+      const operationDate = new Date(operation.date)
       return (
-        opDate.getMonth() === currentMonth &&
-        opDate.getFullYear() === currentYear &&
-        op.category === category &&
-        op.type === 'expense'
+        operation.type === 'expense' &&
+        operation.category === category &&
+        operationDate.getMonth() === month &&
+        operationDate.getFullYear() === year
       )
     })
-    .reduce((total, op) => total + op.amount, 0)
+    .reduce((total, operation) => total + operation.amount, 0)
 }

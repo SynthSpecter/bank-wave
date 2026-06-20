@@ -1,151 +1,84 @@
-# **💰 Bank-wave**
+# bank-wave
 
-> **Français** : Une application bancaire **100% locale** pour gérer manuellement son budget avec des graphiques, des catégories personnalisables et des suggestions intelligentes.  
-> **English** : A **100% local** banking app to manually manage your budget with charts, customizable categories, and smart suggestions.
+bank-wave est une application bancaire locale pour suivre manuellement ses opérations, budgets mensuels et suggestions de gestion. Elle fonctionne dans le navigateur, sans compte, sans serveur distant et sans base de données : les données restent dans le `localStorage` du navigateur.
 
----
+## Fonctionnalités
 
-## **🚀 Installation et Utilisation / Installation and Usage**
+- Tableau de bord avec solde, dépenses du mois et revenus du mois.
+- Ajout et suppression d'opérations de dépense ou de revenu.
+- Budgets mensuels par catégorie, avec restant calculé automatiquement.
+- Suggestions locales : budget dépassé, comparaison avec le mois précédent, catégorie la plus dépensière, épargne possible.
+- Thème clair et thème synthwave.
+- Interface français/anglais.
+- Export CSV des opérations.
+- Graphique local en HTML/CSS, sans dépendance distante.
 
-### **1️⃣ Utilisation directe (sans Node.js) / Direct Usage (No Node.js)**
+## Utilisation rapide
 
-> **Français** :
->
-> 1. Télécharge ou clone ce dépôt :
->
-> git clone https://github.com/[TON_USERNAME]/budgettrack.git
-> cd budgettrack
->
-> 2. Ouvre le fichier `index.html` dans ton navigateur (Opera GX recommandé 😉).
-> 3. Commence à ajouter tes opérations et budgets !
+Clone le dépôt puis ouvre `index.html` dans ton navigateur :
 
-> **English** :
->
-> 1. Download or clone this repository:
->
-> git clone https://github.com/[TON_USERNAME]/budgettrack.git
-> cd budgettrack
->
-> 2. Open the `index.html` file in your browser (Opera GX recommended 😉).
-> 3. Start adding your operations and budgets!
+```bash
+git clone https://github.com/SynthSpecter/bank-wave.git
+cd bank-wave
+```
 
----
+Tu peux aussi lancer le serveur local intégré :
 
-### **2️⃣ Avec Node.js (pour le développement) / With Node.js (For Development)**
+```bash
+npm run dev
+```
 
-> **Français** :  
-> Si tu veux lancer un serveur local avec recharge automatique :
->
-> 1. Installe [Node.js](https://nodejs.org/) (LTS recommandé).
-> 2. Installe les dépendances :
->
-> npm install
->
-> ```
->
-> 3. Lance le serveur de développement :
->
->  npm run dev
->
-> ```
+L'application sera disponible sur `http://localhost:4173`.
 
-> **English** :  
-> If you want to run a local server with hot reload:
->
-> 1. Install [Node.js](https://nodejs.org/) (LTS recommended).
-> 2. Install dependencies:
->
-> npm install
->
-> 3. Start the development server:
->
-> npm run dev
+## Vérification du code
 
----
+Le projet n'a pas besoin de dépendances Node ni de CDN pour fonctionner. Le script suivant vérifie au minimum la syntaxe des fichiers JavaScript :
 
-## **🎨 Personnalisation / Customization**
+```bash
+npm run check
+```
 
-### **Ajouter une nouvelle catégorie / Add a New Category**
+## Structure
 
-> **Français** :
->
-> 1. Modifie le tableau `categories` dans `js/app.js` ou `js/operations.js`.
-> 2. Ajoute une traduction dans `js/translations.js` (pour FR et EN).
-> 3. _(Optionnel)_ Ajoute une icône (emoji ou Font Awesome) dans `translations.js`.
+```text
+bank-wave/
+├── index.html
+├── package.json
+├── styles/
+│   └── main.css
+└── scripts/
+    ├── app.js
+    ├── budget.js
+    ├── operations.js
+    ├── suggestions.js
+    ├── translations.js
+    └── server.js
+```
 
-> **English** :
->
-> 1. Edit the `categories` array in `js/app.js` or `js/operations.js`.
-> 2. Add a translation in `js/translations.js` (for FR and EN).
-> 3. _(Optional)_ Add an icon (emoji or Font Awesome) in `translations.js`.
+## Personnalisation
 
----
+Les catégories par défaut sont définies dans `scripts/app.js`. Les libellés, icônes et messages traduits sont dans `scripts/translations.js`.
 
-### **Changer le thème / Change Theme**
+Pour ajouter une catégorie intégrée :
 
-> **Français** : Clique sur le bouton 🌓 en haut à droite pour basculer entre **clair** et **synthwave**.  
-> **English** : Click the 🌓 button in the top right to toggle between **light** and **synthwave** themes.
+1. Ajoute la catégorie dans `DEFAULT_CATEGORIES`.
+2. Ajoute ses libellés dans `translations.fr.categories` et `translations.en.categories`.
+3. Ajoute une icône dans `categoryIcons`.
 
----
+Les catégories ajoutées depuis l'interface sont conservées automatiquement en local.
 
-### **Changer la langue / Change Language**
+## Confidentialité
 
-> **Français** : Clique sur 🇫🇷 ou 🇬🇧 en haut à droite.  
-> **English** : Click 🇫🇷 or 🇬🇧 in the top right.
+bank-wave ne synchronise aucune donnée. Les opérations, budgets, préférences de langue, catégories et thème sont stockés uniquement dans le navigateur utilisé.
 
----
+## Pistes d'amélioration
 
-## **🤝 Contribuer / Contribute**
+- Import JSON/CSV pour restaurer une sauvegarde.
+- Tags sur les opérations.
+- Statistiques annuelles.
+- Tests automatisés des calculs de solde, budget et suggestions.
+- Mode épargne avec objectifs mensuels.
 
-> **Français** :  
-> Les contributions sont les bienvenues ! Voici comment aider :
->
-> 1. **Fork** le projet.
-> 2. Crée une branche pour ta fonctionnalité (`git checkout -b feature/ma-fonctionnalité`).
-> 3. **Commit** tes changements (`git commit -m "Ajout de ma fonctionnalité"`).
-> 4. **Push** vers la branche (`git push origin feature/ma-fonctionnalité`).
-> 5. Ouvre une **Pull Request**.
+## Licence
 
-> **English** :  
-> Contributions are welcome! Here’s how to help:
->
-> 1. **Fork** the project.
-> 2. Create a branch for your feature (`git checkout -b feature/my-feature`).
-> 3. **Commit** your changes (`git commit -m "Add my feature"`).
-> 4. **Push** to the branch (`git push origin feature/my-feature`).
-> 5. Open a **Pull Request**.
-
----
-
-### **📌 Idées de contributions / Contribution Ideas**
-
-- **Français** : Ajouter un **mode "Épargne"** avec des objectifs mensuels. / **English** : Add a **"Savings" mode** with monthly goals.
-- **Français** : Implémenter un **système de tags** pour les opérations. / **English** : Implement a **tag system** for operations.
-- **Français** : Ajouter des **statistiques annuelles**. / **English** : Add **yearly statistics**.
-- **Français** : Intégrer un **système de sauvegarde/import JSON**. / **English** : Integrate a **JSON backup/import system**.
-- **Français** : Améliorer l’**accessibilité** (ARIA, contrastes, etc.). / **English** : Improve **accessibility** (ARIA, contrast, etc.).
-
----
-
-## **🙏 Remerciements / Acknowledgments**
-
-> **Français** :
->
-> - Inspiré par les outils comme **LaSuite.Coop** (alternative aux GAFAM).
-> - Utilise [Chart.js](https://www.chartjs.org/) pour les graphiques.
-> - Icônes via [Font Awesome](https://fontawesome.com/) ou emojis.
-> - Design inspiré par l’esthétique **synthwave/retro**.
-
-> **English** :
->
-> - Inspired by tools like **LaSuite.Coop** (GAFAM alternative).
-> - Uses [Chart.js](https://www.chartjs.org/) for charts.
-> - Icons via [Font Awesome](https://fontawesome.com/) or emojis.
-> - Design inspired by **synthwave/retro** aesthetics.
-
----
-
-## **📧 Contact**
-
-> **Français** : Pour toute question ou suggestion, ouvre une **issue** ou contacte-moi via [GitHub](https://github.com/[TON_USERNAME]).  
-> **English** : For any questions or suggestions, open an **issue** or contact me via [GitHub](https://github.com/[TON_USERNAME]).
+MIT
